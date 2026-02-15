@@ -66,23 +66,16 @@ else
   gh extension install yahsan2/gh-sub-issue --pin v0.2.0
 fi
 
-# Create directory structure
+# Ensure directory structure exists
 echo ""
-echo "📁 Creating directory structure..."
+echo "📁 Checking directory structure..."
 mkdir -p .claude/prds
 mkdir -p .claude/epics
-mkdir -p .claude/rules
-mkdir -p .claude/agents
-mkdir -p .claude/scripts/pm
-echo "  ✅ Directories created"
+echo "  ✅ Directories ready"
 
-# Copy scripts if in main repo
-if [ -d "scripts/pm" ] && [ ! "$(pwd)" = *"/.claude"* ]; then
-  echo ""
-  echo "📝 Copying PM scripts..."
-  cp -r scripts/pm/* .claude/scripts/pm/
-  chmod +x .claude/scripts/pm/*.sh
-  echo "  ✅ Scripts copied and made executable"
+# Ensure scripts are executable
+if [ -d ".claude/scripts/pm" ]; then
+  chmod +x .claude/scripts/pm/*.sh 2>/dev/null || true
 fi
 
 # Check for git

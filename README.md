@@ -14,48 +14,167 @@ You write a product spec through guided brainstorming. CCPM converts it into a t
 
 Everything lives in `.claude/` as markdown files. GitHub Issues are the shared source of truth for team visibility.
 
-## Quick Start
+---
 
-1. **Copy the `ccpm/` directory into your project's `.claude/` folder** (or clone and copy manually).
+## Installation
 
-2. **Initialize:**
-   ```
-   /pm:init
-   ```
-   Installs GitHub CLI if needed, authenticates, sets up the directory structure.
+### Prerequisites
 
-3. **Start a feature:**
-   ```
-   /pm:start-feature your-feature-name
-   ```
-   This walks you through the full flow: PRD brainstorming, epic creation, task decomposition, branch creation, and kicks off implementation of the first task.
+- [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) installed and working
+- Git repository with a GitHub remote
+- [GitHub CLI (`gh`)](https://cli.github.com/) — CCPM will install this for you if needed
 
-Or do it step by step:
+### Step 1: Add CCPM to your project
+
+From your project root:
 
 ```bash
-/pm:prd-new your-feature       # Brainstorm and write the PRD
-/pm:prd-parse your-feature     # Convert PRD to technical epic
-/pm:epic-decompose your-feature # Break epic into tasks
-/pm:epic-sync your-feature     # Push to GitHub Issues
-/pm:work-on your-feature/001   # Start working on the first task
+# Clone CCPM into a temporary directory
+git clone https://github.com/nanosplit/ccpm.git /tmp/ccpm-install
+
+# Copy the system into your project's .claude/ directory
+# If you already have a .claude/ directory, this merges into it
+cp -r /tmp/ccpm-install/ccpm/* .claude/
+
+# Make scripts executable
+chmod +x .claude/scripts/pm/*.sh
+
+# Clean up
+rm -rf /tmp/ccpm-install
 ```
+
+This copies the commands, agents, rules, and scripts into your project's `.claude/` directory where Claude Code can find them.
+
+### Step 2: Configure permissions (recommended)
+
+Copy the example settings file to auto-allow CCPM's bash commands (git, gh, scripts):
+
+```bash
+# If you don't have a .claude/settings.local.json yet
+cp .claude/settings.json.example .claude/settings.local.json
+
+# If you already have one, merge the permissions manually
+```
+
+The settings file pre-approves common commands (git, gh, npm, etc.) so you aren't prompted on every action. Review it and adjust to your needs.
+
+### Step 3: Update .gitignore
+
+Add CCPM's working directories to your `.gitignore`:
+
+```bash
+# CCPM working data (PRDs, epics, and task files are local working state)
+.claude/prds/
+.claude/epics/
+```
+
+The commands, agents, rules, and scripts should be committed so the whole team has access. The PRDs and epics are your local working state — sync them to GitHub Issues with `/pm:epic-sync` when ready.
+
+### Step 4: Initialize
+
+Open Claude Code in your project and run:
+
+```
+/pm:init
+```
+
+This will:
+- Install GitHub CLI if needed (brew on macOS, apt with proper repo setup on Linux)
+- Authenticate with GitHub if not already logged in
+- Install the `gh-sub-issue` extension (pinned to v0.2.0) for parent-child issue relationships
+- Create the `.claude/prds/` and `.claude/epics/` directories
+- Verify your git remote is configured
+
+### Step 5: Start using it
+
+**Option A — Full workflow in one command:**
+
+```
+/pm:start-feature user-authentication
+```
+
+This walks you through everything: PRD brainstorming, epic creation, task decomposition, branch creation, and kicks off work on the first task.
+
+**Option B — Step by step:**
+
+```
+/pm:prd-new user-authentication       # Brainstorm and write the PRD
+/pm:prd-parse user-authentication     # Convert PRD to technical epic
+/pm:epic-decompose user-authentication # Break epic into tasks
+/pm:epic-sync user-authentication     # Push to GitHub Issues
+/pm:work-on user-authentication/001   # Start working on the first task
+```
+
+---
+
+## Everyday Workflow
+
+Once CCPM is set up, this is the typical day-to-day:
+
+```bash
+# See what's next
+/pm:next
+
+# Pick up a task — researches, plans, implements, tests
+/pm:work-on feature-name/003
+
+# Review your branch before merging
+/pm:review
+
+# Close the task (optionally merges branch back to main)
+/pm:issue-close 1234
+
+# Check overall progress
+/pm:status
+```
+
+### Switching between features
+
+CCPM uses git branches for isolation. To switch context:
+
+```bash
+# Commit current work (or let Claude commit for you)
+git commit -am "WIP: progress on auth"
+
+# Switch to another feature
+git checkout feature/payment-flow
+/pm:work-on payment-flow/002
+
+# Switch back
+git checkout feature/user-authentication
+/pm:work-on user-authentication/004
+```
+
+---
 
 ## Directory Structure
 
+After installation, your `.claude/` directory looks like this:
+
 ```
 .claude/
-├── prds/                  # Product requirement documents
-├── epics/                 # Implementation plans and tasks
+├── agents/                # Agent definitions (researcher, code-analyzer, test-runner)
+├── commands/
+│   ├── pm/                # All /pm: command definitions
+│   ├── context/           # Context management commands
+│   └── testing/           # Test execution commands
+├── context/               # Project-wide context files
+├── epics/                 # Implementation plans and task files (gitignored)
 │   └── feature-name/
 │       ├── epic.md        # Technical plan
 │       ├── 001.md         # Task files
-│       ├── 002.md
 │       └── updates/       # Progress tracking
-├── agents/                # Agent definitions
-├── commands/pm/           # All /pm: command definitions
+├── hooks/                 # Claude Code hooks
+├── prds/                  # Product requirement documents (gitignored)
 ├── rules/                 # Reusable rules (datetime, git, frontmatter)
-└── scripts/pm/            # Shell scripts (init, help)
+├── scripts/
+│   └── pm/                # Shell scripts (init, help, status, etc.)
+├── ccpm.config            # GitHub repo detection config
+├── settings.json.example  # Example permission settings
+└── settings.local.json    # Active permission settings
 ```
+
+---
 
 ## Command Reference
 
@@ -123,6 +242,8 @@ Type `/pm:help` for a quick summary.
 | `/pm:search <query>` | Search across all content |
 | `/pm:init` | Install dependencies and configure GitHub |
 
+---
+
 ## Branching Strategy
 
 CCPM uses branches for feature isolation:
@@ -151,7 +272,7 @@ Agents are launched automatically by workflow commands (e.g., `/pm:work-on` runs
 - **GitHub Issues as shared state** — Local files for speed, GitHub for team visibility
 - **Branches over worktrees** — Simpler mental model, no duplicate dependencies
 - **Explicit sync** — Nothing pushes to GitHub without you asking
-- **Spec-driven** — Every task traces back to a PRD. No vibe coding.
+- **Spec-driven** — Every task traces back to a PRD
 
 ## Technical Notes
 
@@ -159,6 +280,20 @@ Agents are launched automatically by workflow commands (e.g., `/pm:work-on` runs
 - The `gh-sub-issue` extension is pinned to v0.2.0 for reproducibility.
 - All timestamps use ISO 8601 UTC format via `date -u`.
 - Commands use YAML frontmatter `allowed-tools` to declare their tool permissions.
+- Feature names must be kebab-case (lowercase letters, numbers, hyphens).
+
+## Updating
+
+To pull in updates from this repo:
+
+```bash
+git clone https://github.com/nanosplit/ccpm.git /tmp/ccpm-update
+cp -r /tmp/ccpm-update/ccpm/* .claude/
+chmod +x .claude/scripts/pm/*.sh
+rm -rf /tmp/ccpm-update
+```
+
+This overwrites the commands, agents, rules, and scripts. Your PRDs and epics in `.claude/prds/` and `.claude/epics/` are not affected.
 
 ## License
 
