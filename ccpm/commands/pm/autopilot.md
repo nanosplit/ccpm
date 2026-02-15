@@ -49,20 +49,47 @@ Do not bother the user with preflight checks progress. Just do them and move on.
 
 ### 1. Setup Branch
 
+Find the right branch to work on. Check for existing branches in this order:
+
 ```bash
+# 1. Check for existing feature branch
+# 2. Check for existing task branches with work from this epic
+# 3. Fall back to creating from main
+
 branch_name="feature/$ARGUMENTS"
 
 if git branch -a | grep -q "$branch_name"; then
+  # Feature branch exists — use it
   git checkout "$branch_name"
   git pull origin "$branch_name" 2>/dev/null || true
   echo "✅ Using existing branch: $branch_name"
 else
-  git checkout main
-  git pull origin main
-  git checkout -b "$branch_name"
-  echo "✅ Created branch: $branch_name"
+  # No feature branch. Check if there are task branches with work from this epic.
+  # Look for task/* branches that might contain prior work.
+  existing_task_branch=$(git branch -a | grep -E "task/.*$ARGUMENTS" | head -1 | xargs 2>/dev/null || true)
+
+  if [ -n "$existing_task_branch" ]; then
+    # Found a task branch with prior work — create feature branch from it
+    clean_branch=$(echo "$existing_task_branch" | sed 's/remotes\/origin\///' | xargs)
+    git checkout "$clean_branch"
+    git pull origin "$clean_branch" 2>/dev/null || true
+    git checkout -b "$branch_name"
+    echo "✅ Created branch: $branch_name (from $clean_branch with prior work)"
+  else
+    # No prior work — create from main
+    git checkout main
+    git pull origin main
+    git checkout -b "$branch_name"
+    echo "✅ Created branch: $branch_name (from main)"
+  fi
 fi
 ```
+
+**Important:** If the current branch already has commits for this epic (e.g., you ran `/pm:work-on` for earlier tasks), stay on the current branch instead of switching. Check:
+```bash
+current_branch=$(git branch --show-current)
+```
+If the current branch contains work for this epic and is NOT main, use it directly by renaming or continuing on it.
 
 ### 2. Display Plan
 
