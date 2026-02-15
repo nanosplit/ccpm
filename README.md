@@ -47,16 +47,11 @@ This copies the commands, agents, rules, and scripts into your project's `.claud
 
 ### Step 2: Configure permissions (recommended)
 
-Copy the example settings file to auto-allow CCPM's bash commands (git, gh, scripts):
+CCPM ships with a `settings.local.json` that pre-approves common commands (git, gh, npm, scripts, etc.) so you aren't prompted on every action. It's copied automatically in Step 1.
 
-```bash
-# If you don't have a .claude/settings.local.json yet
-cp .claude/settings.json.example .claude/settings.local.json
+If you already had a `.claude/settings.local.json`, merge the permission entries from `.claude/settings.json.example` into yours.
 
-# If you already have one, merge the permissions manually
-```
-
-The settings file pre-approves common commands (git, gh, npm, etc.) so you aren't prompted on every action. Review it and adjust to your needs.
+Review the permissions and adjust to your stack — for example, add `"Bash(rails:*)"` for Rails projects or remove tools you don't use.
 
 ### Step 3: Update .gitignore
 
