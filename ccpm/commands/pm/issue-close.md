@@ -84,14 +84,43 @@ fi
 - Calculate new progress percentage
 - Update epic.md frontmatter progress field
 
-### 7. Output
+### 7. Offer Branch Merge
+
+Check if currently on a task branch:
+```bash
+current_branch=$(git branch --show-current)
+```
+
+If the branch matches the `task/*` pattern:
+
+Ask the user:
+```
+🔀 Currently on branch: {current_branch}
+   Merge this branch back to main? (yes/no)
+```
+
+If **yes**:
+```bash
+git checkout main
+git pull origin main
+git merge --no-ff "$current_branch" -m "Merge $current_branch: Issue #$ARGUMENTS completed"
+git push origin main
+git branch -d "$current_branch"
+git push origin --delete "$current_branch" 2>/dev/null || true
+echo "✅ Branch merged and cleaned up"
+```
+
+If **no**: "Okay, branch `{current_branch}` left as-is."
+
+### 8. Output
 
 ```
 ✅ Closed issue #$ARGUMENTS
   Local: Task marked complete
   GitHub: Issue closed & epic updated
   Epic progress: {new_progress}% ({closed}/{total} tasks complete)
-  
+  Branch: {merged or left as-is}
+
 Next: Run /pm:next for next priority task
 ```
 
@@ -99,4 +128,5 @@ Next: Run /pm:next for next priority task
 
 Follow `/rules/frontmatter-operations.md` for updates.
 Follow `/rules/github-operations.md` for GitHub commands.
+Follow `/rules/branch-operations.md` for merge operations.
 Always sync local state before GitHub.

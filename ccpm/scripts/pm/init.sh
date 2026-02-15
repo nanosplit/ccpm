@@ -35,7 +35,10 @@ else
   if command -v brew &> /dev/null; then
     brew install gh
   elif command -v apt-get &> /dev/null; then
-    sudo apt-get update && sudo apt-get install gh
+    echo "  Installing gh via official deb package..."
+    curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+    sudo apt-get update && sudo apt-get install gh -y
   else
     echo "  Please install GitHub CLI manually: https://cli.github.com/"
     exit 1
@@ -60,7 +63,7 @@ if gh extension list | grep -q "yahsan2/gh-sub-issue"; then
   echo "  ✅ gh-sub-issue extension installed"
 else
   echo "  📥 Installing gh-sub-issue extension..."
-  gh extension install yahsan2/gh-sub-issue
+  gh extension install yahsan2/gh-sub-issue --pin v0.2.0
 fi
 
 # Create directory structure
