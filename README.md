@@ -181,6 +181,7 @@ Type `/pm:help` for a quick summary.
 |---------|-------------|
 | `/pm:start-feature <name>` | End-to-end: PRD, epic, tasks, branch, and implement |
 | `/pm:work-on <task>` | Research, plan, implement, and test a single task |
+| `/pm:autopilot <epic>` | Unattended: run all tasks, push branch, create PR |
 | `/pm:review` | Review current branch for bugs and merge readiness |
 | `/pm:next` | Show next priority task |
 | `/pm:status` | Project dashboard |
