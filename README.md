@@ -154,7 +154,7 @@ After installation, your `.claude/` directory looks like this:
 
 ```
 .claude/
-├── agents/                # Agent definitions (researcher, code-analyzer, test-runner)
+├── agents/                # Agent definitions (researcher, code-analyzer, test-runner, spec-reviewer)
 ├── commands/
 │   ├── pm/                # All /pm: command definitions
 │   ├── context/           # Context management commands
@@ -167,7 +167,7 @@ After installation, your `.claude/` directory looks like this:
 │       └── updates/       # Progress tracking
 ├── hooks/                 # Claude Code hooks
 ├── prds/                  # Product requirement documents (gitignored)
-├── rules/                 # Reusable rules (datetime, git, frontmatter)
+├── rules/                 # Operational rules (testing discipline, verification, rationalization prevention, etc.)
 ├── scripts/
 │   └── pm/                # Shell scripts (init, help, status, etc.)
 ├── ccpm.config            # GitHub repo detection config
@@ -186,9 +186,9 @@ Type `/pm:help` for a quick summary.
 | Command | Description |
 |---------|-------------|
 | `/pm:start-feature <name>` | End-to-end: PRD, epic, tasks, branch, and implement |
-| `/pm:work-on <task>` | Research, plan, implement, and test a single task |
-| `/pm:autopilot <epic>` | Unattended: run all tasks, push branch, create PR |
-| `/pm:review` | Review current branch for bugs and merge readiness |
+| `/pm:work-on <task>` | Research, plan, implement, test, dual review, and verify a single task |
+| `/pm:autopilot <epic>` | Unattended: run all tasks with full discipline, push branch, create PR |
+| `/pm:review` | Dual review (spec compliance + code quality) and merge readiness |
 | `/pm:next` | Show next priority task |
 | `/pm:status` | Project dashboard |
 | `/pm:standup` | Daily standup summary |
@@ -260,13 +260,45 @@ Parallel execution (`/pm:issue-start <num> --parallel`) is available for splitti
 
 ## Agents
 
-Three specialized agents handle different parts of the workflow:
+Four specialized agents handle different parts of the workflow:
 
-- **researcher** — Analyzes the codebase for a task and produces a file-by-file change plan with dependency ordering and risk assessment
+- **researcher** — Analyzes the codebase for a task and produces a file-by-file change plan with dependency ordering, risk assessment, and a testing tier recommendation
+- **spec-reviewer** — Independently verifies that an implementation satisfies a task's acceptance criteria. Does not trust the implementer's report — reads the actual code against the spec
 - **code-analyzer** — Reviews code changes for bugs, security issues, and regressions
 - **test-runner** — Executes tests and provides structured analysis of results
 
-Agents are launched automatically by workflow commands (e.g., `/pm:work-on` runs the researcher, `/pm:review` runs the code-analyzer).
+Agents are launched automatically by workflow commands. `/pm:work-on` and `/pm:autopilot` run the researcher before implementation, then dispatch both the spec-reviewer and code-analyzer as a **dual review** after implementation. `/pm:review` runs the same dual review on any branch.
+
+## Engineering Discipline
+
+CCPM enforces several quality gates throughout the workflow, inspired by the [Superpowers](https://github.com/obra/superpowers) framework:
+
+### Tiered Testing Discipline
+
+Not every change needs the same testing rigor. The researcher agent assesses the task and recommends a tier:
+
+- **Tier 1: Full TDD** — Write a failing test before production code. For new features, bug fixes, core logic, and security-sensitive changes.
+- **Tier 2: Test-after** — Implement first, then write tests. For refactors with existing coverage, internal utilities, and exploratory work.
+- **Tier 3: Verify-only** — Run the existing test suite. For config, docs, and cosmetic changes.
+
+The existing test suite always runs regardless of tier. When in doubt, the system defaults one tier up.
+
+### Verification Before Completion
+
+No task can be marked complete without fresh evidence. Agents must run actual commands (tests, builds), read the real output, and confirm each acceptance criterion is satisfied. "It should work" is not verification.
+
+### Dual Review
+
+After implementation, two independent reviews run in parallel:
+
+1. **Spec compliance** (spec-reviewer agent) — Checks every acceptance criterion against the actual code
+2. **Code quality** (code-analyzer agent) — Hunts for bugs, security issues, and pattern violations
+
+Critical issues must be fixed before proceeding. In autopilot mode, important/minor issues are logged for the PR.
+
+### Rationalization Prevention
+
+Agents will try to skip steps. The system includes explicit tables of common rationalizations and counter-arguments, embedded at the decision points where shortcuts are most likely — before research, before testing, and in unattended mode.
 
 ## Design Decisions
 
