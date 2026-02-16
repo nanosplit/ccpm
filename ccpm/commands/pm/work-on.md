@@ -22,6 +22,7 @@ Where `<task-identifier>` can be:
 - `.claude/rules/branch-operations.md` - For git branch operations
 - `.claude/rules/verification-before-completion.md` - For verification gate before completing work
 - `.claude/rules/rationalization-prevention.md` - For catching shortcut rationalizations
+- `.claude/rules/testing-discipline.md` - For choosing the right testing tier
 
 ## Preflight Checklist
 
@@ -155,15 +156,38 @@ Proceed with implementation? (yes/no/modify)
 
 ### 6. Implement
 
-Execute the change plan step by step:
-- Follow the dependency ordering from the researcher's plan
-- Make changes file by file
-- Commit after each logical unit of work with format: `Issue #{number}: {specific change}` (or `Task {id}: {change}` if no issue number)
+Follow the testing tier recommended by the researcher (see `.claude/rules/testing-discipline.md`). Display the tier before starting:
+
+```
+Testing discipline: Tier {1/2/3} — {Full TDD / Test-after / Verify-only}
+Rationale: {researcher's rationale}
+```
+
+**Tier 1 (Full TDD):** For each change unit:
+1. Write a failing test that describes the expected behavior
+2. Run the test — confirm it fails
+3. Write the minimum production code to pass the test
+4. Refactor if needed while keeping tests green
+5. Commit the test and production code together
+
+**Tier 2 (Test-after):** Implement all changes first, then:
+1. Follow the dependency ordering from the researcher's plan
+2. Make changes file by file
+3. Commit after each logical unit of work
+4. After implementation, write tests covering the new/changed behavior
+
+**Tier 3 (Verify-only):** Implement directly:
+1. Follow the dependency ordering from the researcher's plan
+2. Make changes file by file
+3. Commit after each logical unit of work
+
+For all tiers:
+- Use commit format: `Issue #{number}: {specific change}` (or `Task {id}: {change}` if no issue number)
 - If any step is unclear or risky, ask the user before proceeding
 
 ### 7. Run Tests
 
-**Do NOT skip this step.** Not for config changes, not for "trivial" fixes, not because "tests are unrelated." See `.claude/rules/rationalization-prevention.md` — Testing Shortcuts. Run the tests.
+**Do NOT skip this step.** Not for config changes, not for "trivial" fixes, not because "tests are unrelated." See `.claude/rules/rationalization-prevention.md` — Testing Shortcuts. The existing test suite runs regardless of tier.
 
 Launch the test-runner agent:
 

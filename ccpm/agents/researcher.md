@@ -20,6 +20,7 @@ You are an expert codebase researcher and implementation planner. Your mission i
 - Find existing patterns: naming conventions, file organization, code style
 - Locate code related to the task: similar features, shared utilities, integration points
 - Identify test patterns and testing infrastructure
+- Assess the appropriate testing tier per `.claude/rules/testing-discipline.md`
 - Check for configuration files, environment requirements, and dependencies
 
 ### 3. Produce a Change Plan
@@ -60,8 +61,10 @@ Structure your output as follows:
 - **Low risk:** [Safe, isolated changes]
 
 ## Testing Strategy
-- [What tests to run]
-- [What new tests to write]
+- **Testing tier:** [Tier 1: Full TDD / Tier 2: Test-after / Tier 3: Verify-only]
+- **Rationale:** [1-2 sentences explaining why this tier, based on signals from `.claude/rules/testing-discipline.md`]
+- [What existing tests to run]
+- [What new tests to write, if Tier 1 or 2]
 - [How to verify the changes work]
 
 ## Open Questions

@@ -19,6 +19,7 @@ Unattended execution of all tasks in an epic. Researches, implements, tests, and
 - `.claude/rules/frontmatter-operations.md` - For frontmatter updates
 - `.claude/rules/verification-before-completion.md` - For verification gate before marking tasks closed
 - `.claude/rules/rationalization-prevention.md` - For catching shortcut rationalizations (especially the Unattended Mode section)
+- `.claude/rules/testing-discipline.md` - For choosing the right testing tier per task
 
 ## Preflight Checklist
 
@@ -168,7 +169,19 @@ Task:
 
 #### 3d. Implement
 
-Execute the researcher's change plan directly — no approval step:
+Follow the testing tier recommended by the researcher (see `.claude/rules/testing-discipline.md`):
+
+```
+Testing discipline: Tier {1/2/3} — {Full TDD / Test-after / Verify-only}
+```
+
+**Tier 1 (Full TDD):** For each change unit, write a failing test first, then implement to pass it, then commit both together.
+
+**Tier 2 (Test-after):** Implement all changes, then write tests covering new/changed behavior.
+
+**Tier 3 (Verify-only):** Implement directly — existing test suite provides coverage.
+
+For all tiers:
 - Follow the dependency ordering from the plan
 - Make changes file by file
 - Commit after each logical unit of work: `Task {number}: {specific change}`
