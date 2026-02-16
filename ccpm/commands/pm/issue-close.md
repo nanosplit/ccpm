@@ -11,15 +11,34 @@ Mark an issue as complete and close it on GitHub.
 /pm:issue-close <issue_number> [completion_notes]
 ```
 
+## Required Rules
+
+**IMPORTANT:** Before executing this command, read and follow:
+- `.claude/rules/verification-before-completion.md` - Verification gate before closing
+
 ## Instructions
 
-### 1. Find Local Task File
+### 1. Verify Before Closing
+
+**Follow `.claude/rules/verification-before-completion.md` — this gate is mandatory.**
+
+Before closing any issue, verify the work is actually done:
+
+1. **Read the task file** and extract acceptance criteria
+2. **Run the project's test suite** (or relevant subset) and read the output
+3. **Check each acceptance criterion** is satisfied with fresh evidence
+4. If verification fails: "❌ Cannot close — verification failed: {what failed}. Fix the issues and try again."
+5. If no acceptance criteria exist: at minimum confirm the build succeeds and relevant tests pass
+
+Only proceed to close if verification passes.
+
+### 2. Find Local Task File
 
 First check if `.claude/epics/*/$ARGUMENTS.md` exists (new naming).
 If not found, search for task file with `github:.*issues/$ARGUMENTS` in frontmatter (old naming).
 If not found: "❌ No local task for issue #$ARGUMENTS"
 
-### 2. Update Local Status
+### 3. Update Local Status
 
 Get current datetime: `date -u +"%Y-%m-%dT%H:%M:%SZ"`
 
@@ -29,14 +48,14 @@ status: closed
 updated: {current_datetime}
 ```
 
-### 3. Update Progress File
+### 4. Update Progress File
 
 If progress file exists at `.claude/epics/{epic}/updates/$ARGUMENTS/progress.md`:
 - Set completion: 100%
 - Add completion note with timestamp
 - Update last_sync with current datetime
 
-### 4. Close on GitHub
+### 5. Close on GitHub
 
 Add completion comment and close:
 ```bash
@@ -52,7 +71,7 @@ Closed at: {timestamp}" | gh issue comment $ARGUMENTS --body-file -
 gh issue close $ARGUMENTS
 ```
 
-### 5. Update Epic Task List on GitHub
+### 6. Update Epic Task List on GitHub
 
 Check the task checkbox in the epic issue:
 
@@ -77,14 +96,14 @@ if [ ! -z "$epic_issue" ]; then
 fi
 ```
 
-### 6. Update Epic Progress
+### 7. Update Epic Progress
 
 - Count total tasks in epic
 - Count closed tasks
 - Calculate new progress percentage
 - Update epic.md frontmatter progress field
 
-### 7. Offer Branch Merge
+### 8. Offer Branch Merge
 
 Check if currently on a task branch:
 ```bash
@@ -112,7 +131,7 @@ echo "✅ Branch merged and cleaned up"
 
 If **no**: "Okay, branch `{current_branch}` left as-is."
 
-### 8. Output
+### 9. Output
 
 ```
 ✅ Closed issue #$ARGUMENTS

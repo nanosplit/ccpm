@@ -17,6 +17,8 @@ Unattended execution of all tasks in an epic. Researches, implements, tests, and
 - `.claude/rules/datetime.md` - For getting real current date/time
 - `.claude/rules/branch-operations.md` - For git branch operations
 - `.claude/rules/frontmatter-operations.md` - For frontmatter updates
+- `.claude/rules/verification-before-completion.md` - For verification gate before marking tasks closed
+- `.claude/rules/rationalization-prevention.md` - For catching shortcut rationalizations (especially the Unattended Mode section)
 
 ## Preflight Checklist
 
@@ -46,6 +48,8 @@ Do not bother the user with preflight checks progress. Just do them and move on.
 ## Instructions
 
 **CRITICAL: This is unattended mode. Do NOT ask the user for confirmation at any point. Do NOT present plans for approval. Research, implement, test, and advance automatically.**
+
+**EQUALLY CRITICAL: Unattended does not mean undisciplined.** No human is watching, which makes it more important — not less — to follow every step rigorously. Do not skip research, do not skip testing, do not skip verification. See `.claude/rules/rationalization-prevention.md` — Unattended Mode Shortcuts. Every rationalization for skipping a step is amplified when no one is watching.
 
 ### 1. Setup Branch
 
@@ -190,11 +194,82 @@ Task:
     If no test infrastructure exists, note this and skip.
 ```
 
-#### 3f. Record Result
+#### 3f. Dual Review
+
+Launch both reviewers in parallel to catch spec and quality issues before verification.
+
+**Spec compliance review** — launch the spec-reviewer agent:
+
+```yaml
+Task:
+  description: "Spec review: {task_name}"
+  subagent_type: "general-purpose"
+  prompt: |
+    You are the spec-reviewer agent. Read the agent definition at .claude/agents/spec-reviewer.md and follow its instructions.
+
+    Task file: {task_file_path}
+    Task specification:
+    {task_description}
+
+    Acceptance criteria:
+    {acceptance_criteria}
+
+    Changed files:
+    {list_of_changed_files}
+
+    Implementation summary:
+    {brief_summary_of_what_was_implemented}
+
+    Independently verify that the code changes satisfy every acceptance criterion.
+    Do not trust the implementation summary — read the actual code.
+```
+
+**Code quality review** — launch the code-analyzer agent (in parallel):
+
+```yaml
+Task:
+  description: "Quality review: {task_name}"
+  subagent_type: "general-purpose"
+  prompt: |
+    You are the code-analyzer agent. Read the agent definition at .claude/agents/code-analyzer.md and follow its instructions.
+
+    Review the changes made to implement: {task_name}
+
+    Changed files:
+    {list_of_changed_files}
+
+    Analyze all changed files for bugs, security issues, and pattern violations.
+    Produce your analysis in the standard code-analyzer output format.
+```
+
+**Evaluate results in autopilot mode:**
+- **Critical issues from either reviewer:** Attempt to fix and re-review (up to 1 re-review cycle to keep progress moving)
+- **Important/Minor issues only:** Log them in the task result but continue — the user will review in the PR
+- **Both pass cleanly:** Proceed to verification
+
+Log review results briefly:
+```
+  Review: Spec {PASS/FAIL} | Quality {risk level}
+  {if issues: count and severity}
+```
+
+#### 3g. Verify Completion
+
+**Follow `.claude/rules/verification-before-completion.md` — this gate is mandatory even in autopilot.**
+
+Before marking a task closed:
+
+1. **Re-read the task's acceptance criteria** from the task file
+2. **Run fresh verification** — run tests/build again even if the test-runner agent just ran them
+3. **Check each acceptance criterion** against real output
+4. **If verification passes:** proceed to record result as closed
+5. **If verification fails:** attempt to fix the issue and re-verify (up to 2 attempts in autopilot mode to keep progress moving). If still failing after 2 attempts, mark the task as `in-progress` (not closed), log the failure, and continue to the next task.
+
+#### 3h. Record Result
 
 Get current datetime: `date -u +"%Y-%m-%dT%H:%M:%SZ"`
 
-Update task frontmatter:
+If verification passed — update task frontmatter:
 ```yaml
 status: closed
 updated: {current_datetime}
@@ -205,19 +280,21 @@ Log the result briefly:
   ✅ Task {number}: {task_name}
      Files: {count} changed
      Tests: {pass/fail/skipped}
+     Verification: passed
      Commits: {count}
 ```
 
-If tests failed:
+If verification failed after retries:
 ```
-  ⚠️ Task {number}: {task_name} — tests failed
+  ⚠️ Task {number}: {task_name} — verification failed
      {brief failure summary}
+     Status: left as in-progress
      Continuing to next task...
 ```
 
-Do NOT stop on test failures. Log them and continue. The user will review everything at the end.
+Do NOT mark a task as closed if verification failed. Leave it as `in-progress` so the user knows it needs attention. Continue to the next task.
 
-#### 3g. Advance
+#### 3i. Advance
 
 Go back to step 3a for the next task.
 

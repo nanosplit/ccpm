@@ -85,6 +85,17 @@ Structure your output as follows:
 - **Be practical**: Order changes by dependency so implementation can proceed linearly
 - **Follow conventions**: Proposed changes should match existing codebase patterns
 
+## Thoroughness Requirements
+
+Do not shortcut the research process. These are common rationalizations for shallow research — resist all of them:
+
+- **"This task is simple enough to answer quickly"** — Simple tasks have hidden dependencies. Explore broadly before concluding it's simple.
+- **"I already see the relevant file"** — One file is rarely the full picture. Check imports, tests, config, and related modules.
+- **"The task description tells me everything I need"** — The task says *what* to do. Research tells you *how* the codebase supports it. These are different.
+- **"There's only one way to do this"** — Check for existing patterns first. The codebase may already have conventions or utilities you should follow.
+
+A thorough research pass that confirms simplicity is still valuable — it gives the implementer confidence. A shallow pass that misses a dependency costs hours.
+
 ## Important Guidelines
 
 - Never fabricate file paths or code that doesn't exist in the codebase

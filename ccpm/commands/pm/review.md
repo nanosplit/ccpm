@@ -64,16 +64,50 @@ Files changed: {file_count}
   {diff_stat_summary}
 ```
 
-### 2. Launch Code Analyzer
+### 2. Dual Review
 
-Get the full diff and list of changed files, then launch the code-analyzer agent:
+Launch two independent reviews in parallel. These catch different classes of problems and together provide comprehensive coverage.
+
+#### 2a. Spec Compliance Review
+
+If the branch is associated with a task (detected from branch name pattern `task/*`), launch the spec-reviewer to check if the implementation matches the task's acceptance criteria:
 
 ```yaml
 Task:
-  description: "Code review: {branch}"
+  description: "Spec review: {branch}"
   subagent_type: "general-purpose"
   prompt: |
-    You are the code-analyzer agent. Read the agent definition at ccpm/agents/code-analyzer.md and follow its instructions.
+    You are the spec-reviewer agent. Read the agent definition at .claude/agents/spec-reviewer.md and follow its instructions.
+
+    Task file: {task_file_path}
+    Task specification:
+    {task_description}
+
+    Acceptance criteria:
+    {acceptance_criteria}
+
+    Changed files:
+    {list_of_changed_files}
+
+    Commit history:
+    {commit_log}
+
+    Independently verify that the code changes satisfy every acceptance criterion.
+    Read the actual code — do not trust commit messages as evidence of completion.
+```
+
+If no task file is associated with the branch, skip the spec review and note: "ℹ️ No task file found for this branch — skipping spec compliance review."
+
+#### 2b. Code Quality Review
+
+Launch the code-analyzer agent to review for bugs, security, and quality (runs in parallel with spec review):
+
+```yaml
+Task:
+  description: "Quality review: {branch}"
+  subagent_type: "general-purpose"
+  prompt: |
+    You are the code-analyzer agent. Read the agent definition at .claude/agents/code-analyzer.md and follow its instructions.
 
     Review the following changes on branch: {branch}
 
@@ -100,26 +134,32 @@ Task:
 
 ### 3. Display Results
 
-Present the code-analyzer's findings:
+Present findings from both reviewers:
 
 ```
-📊 Code Review Results: {branch}
+📊 Dual Review Results: {branch}
 ══════════════════════════════════
 
-{code_analyzer_output}
+Spec Compliance:
+  Verdict: {PASS/FAIL/CONDITIONAL PASS/Skipped}
+  {criteria summary table or skip reason}
+
+Code Quality:
+  Risk Level: {Critical/High/Medium/Low}
+  {code_analyzer_findings}
 
 ──────────────────────────────────
 ```
 
 ### 4. Gate Decision
 
-Based on the analysis results, provide a merge readiness assessment:
+Based on the combined results from both reviews:
 
-**If no critical or high issues found:**
+**If both reviews pass (no critical or high issues):**
 ```
 ✅ Ready to merge
 
-No critical issues found. Branch appears safe to merge.
+No critical issues found across both reviews.
 
 Suggested next steps:
   • Push branch: git push -u origin {branch}
@@ -127,12 +167,17 @@ Suggested next steps:
   • Merge to main: git checkout main && git merge --no-ff {branch}
 ```
 
-**If critical or high issues found:**
+**If either reviewer found critical or high issues:**
 ```
 ⚠️ Issues found — fix before merging
 
-{count} issue(s) should be addressed before merging:
-  {list_of_critical_and_high_issues}
+{section for each reviewer that found issues}
+
+Spec compliance issues:
+  {list if any}
+
+Code quality issues:
+  {list if any}
 
 After fixing:
   • Run /pm:review again to verify
