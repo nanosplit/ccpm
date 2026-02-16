@@ -47,11 +47,16 @@ This copies the commands, agents, rules, and scripts into your project's `.claud
 
 ### Step 2: Configure permissions (recommended)
 
-CCPM ships with a `settings.local.json` that pre-approves common commands (git, gh, npm, scripts, etc.) so you aren't prompted on every action. It's copied automatically in Step 1.
+CCPM ships with a `settings.local.json` that pre-approves common commands so you aren't prompted on every action. It's copied automatically in Step 1 and includes:
 
-If you already had a `.claude/settings.local.json`, merge the permission entries from `.claude/settings.json.example` into yours.
+- `Edit` and `Write` — auto-allow all file edits (no per-session prompts)
+- `Bash(git:*)`, `Bash(gh:*)` — git and GitHub CLI operations
+- `Bash(bash .claude/scripts/pm/*)` — CCPM's shell scripts
+- Common build tools (npm, bundle, make, etc.)
 
-Review the permissions and adjust to your stack — for example, add `"Bash(rails:*)"` for Rails projects or remove tools you don't use.
+If you already had a `.claude/settings.local.json`, merge the entries from `.claude/settings.json.example` into yours. The key ones to add are `"Edit"` and `"Write"` in the allow array — without these, Claude will prompt for every file change.
+
+Review the permissions and adjust to your stack — for example, add `"Bash(rails:*)"` for Rails projects.
 
 ### Step 3: Update .gitignore
 
@@ -104,24 +109,25 @@ This walks you through everything: PRD brainstorming, epic creation, task decomp
 
 ## Everyday Workflow
 
-Once CCPM is set up, this is the typical day-to-day:
+Once CCPM is set up, there are two ways to work:
+
+### Interactive — one task at a time
 
 ```bash
-# See what's next
-/pm:next
-
-# Pick up a task — researches, plans, implements, tests
-/pm:work-on feature-name/003
-
-# Review your branch before merging
-/pm:review
-
-# Close the task (optionally merges branch back to main)
-/pm:issue-close 1234
-
-# Check overall progress
-/pm:status
+/pm:next                        # See what's ready
+/pm:work-on feature-name/003   # Research, plan, implement, test
+/pm:review                      # Code review before merge
+/pm:issue-close 1234            # Close task, optionally merge branch
+/pm:status                      # Check overall progress
 ```
+
+### Unattended — let it run
+
+```bash
+/pm:autopilot feature-name     # Runs all remaining tasks, pushes, creates PR
+```
+
+Autopilot works through every task in dependency order — research, implement, test, advance — without stopping to ask. When it's done, it pushes the branch and creates a PR for you to review. Use this when you want to kick off work and walk away.
 
 ### Switching between features
 
@@ -289,7 +295,25 @@ chmod +x .claude/scripts/pm/*.sh
 rm -rf /tmp/ccpm-update
 ```
 
-This overwrites the commands, agents, rules, and scripts. Your PRDs and epics in `.claude/prds/` and `.claude/epics/` are not affected.
+This overwrites commands, agents, rules, and scripts. The following are **not affected**:
+
+| Safe (not overwritten) | Overwritten on update |
+|------------------------|-----------------------|
+| `.claude/prds/` | `.claude/commands/` |
+| `.claude/epics/` | `.claude/agents/` |
+| `.claude/context/` | `.claude/rules/` |
+| | `.claude/scripts/` |
+
+**After updating:** restart Claude Code to pick up new or changed commands. Settings files (`settings.local.json`) are also overwritten — if you've customized permissions, back up your file first or re-merge after.
+
+To update a single command or agent without a full update:
+
+```bash
+# Example: update just the autopilot command
+git clone https://github.com/nanosplit/ccpm.git /tmp/ccpm-update
+cp /tmp/ccpm-update/ccpm/commands/pm/autopilot.md .claude/commands/pm/autopilot.md
+rm -rf /tmp/ccpm-update
+```
 
 ## License
 
