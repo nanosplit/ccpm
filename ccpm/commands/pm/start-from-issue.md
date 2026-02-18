@@ -342,10 +342,28 @@ If **no**: Skip syncing — tasks remain local with sequential numbering.
 Follow `/rules/branch-operations.md`:
 
 ```bash
-git checkout main
-git pull origin main
-git checkout -b feature/$feature_name
-echo "✅ Created branch: feature/$feature_name"
+current_branch=$(git branch --show-current)
+```
+
+If not on `main`:
+```
+⚠️ You're currently on branch '$current_branch'.
+Create feature/$feature_name from here, or switch to main first? (here/main)
+```
+
+- If **here**: Create branch from current position
+  ```bash
+  git checkout -b feature/$feature_name
+  ```
+- If **main** (or already on main):
+  ```bash
+  git checkout main
+  git pull origin main
+  git checkout -b feature/$feature_name
+  ```
+
+```
+✅ Created branch: feature/$feature_name (from $base_branch)
 ```
 
 ### Step 6: Kick Off First Task

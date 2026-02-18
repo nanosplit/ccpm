@@ -207,10 +207,28 @@ Confirm: "✅ Created {count} tasks for epic: $ARGUMENTS"
 Follow `/rules/branch-operations.md`:
 
 ```bash
-git checkout main
-git pull origin main
-git checkout -b feature/$ARGUMENTS
-echo "✅ Created branch: feature/$ARGUMENTS"
+current_branch=$(git branch --show-current)
+```
+
+If not on `main`:
+```
+⚠️ You're currently on branch '$current_branch'.
+Create feature/$ARGUMENTS from here, or switch to main first? (here/main)
+```
+
+- If **here**: Create branch from current position
+  ```bash
+  git checkout -b feature/$ARGUMENTS
+  ```
+- If **main** (or already on main):
+  ```bash
+  git checkout main
+  git pull origin main
+  git checkout -b feature/$ARGUMENTS
+  ```
+
+```
+✅ Created branch: feature/$ARGUMENTS (from $base_branch)
 ```
 
 ### Step 5: Kick Off First Task
