@@ -259,9 +259,11 @@ Type `/pm:help` for a quick summary.
 
 CCPM uses branches for feature isolation:
 
-- `feature/<name>` — Created by `/pm:start-feature`, holds all work for a feature
+- `feature/<name>` — Created by `/pm:start-feature` or `/pm:start-from-issue`, holds all work for a feature
 - `task/<issue>-<slug>` — Created by `/pm:issue-start` or `/pm:work-on`, one branch per task
 - `epic/<name>` — Created by `/pm:epic-start` for parallel agent execution
+
+When creating a feature branch, CCPM defaults to branching from `main`. If you're on a different branch, it will ask whether to branch from your current position or switch to `main` first — so you won't lose context mid-work.
 
 When closing an issue with `/pm:issue-close`, you're offered the option to merge the task branch back to main.
 
