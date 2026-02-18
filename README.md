@@ -87,7 +87,7 @@ This will:
 
 ### Step 5: Start using it
 
-**Option A — Full workflow in one command:**
+**Option A — Full workflow from scratch:**
 
 ```
 /pm:start-feature user-authentication
@@ -95,7 +95,15 @@ This will:
 
 This walks you through everything: PRD brainstorming, epic creation, task decomposition, branch creation, and kicks off work on the first task.
 
-**Option B — Step by step:**
+**Option B — Start from a GitHub issue:**
+
+```
+/pm:start-from-issue 42
+```
+
+When a detailed GitHub issue already exists with feature requirements, this fetches the issue, auto-generates a PRD from it, creates an epic, decomposes into tasks, and optionally syncs tasks as sub-issues under the original issue. You can provide a custom feature name: `/pm:start-from-issue 42 my-feature-name`.
+
+**Option C — Step by step:**
 
 ```
 /pm:prd-new user-authentication       # Brainstorm and write the PRD
@@ -186,6 +194,7 @@ Type `/pm:help` for a quick summary.
 | Command | Description |
 |---------|-------------|
 | `/pm:start-feature <name>` | End-to-end: PRD, epic, tasks, branch, and implement |
+| `/pm:start-from-issue <num> [name]` | Start a feature from an existing GitHub issue |
 | `/pm:work-on <task>` | Research, plan, implement, test, dual review, and verify a single task |
 | `/pm:autopilot <epic>` | Unattended: run all tasks with full discipline, push branch, create PR |
 | `/pm:review` | Dual review (spec compliance + code quality) and merge readiness |
